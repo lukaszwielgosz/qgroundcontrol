@@ -78,9 +78,12 @@ int WindowsCrtReportHook(int reportType, char* message, int* returnValue)
 
 #endif
 
-#if defined(__android__) && !defined(NO_SERIAL_LINK)
+#if defined(__android__)
 #include <jni.h>
+#include "JoystickAndroid.h"
+#if !defined(NO_SERIAL_LINK)
 #include "qserialport.h"
+#endif
 
 jint JNI_OnLoad(JavaVM* vm, void* reserved)
 {
@@ -90,8 +93,10 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
     if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) {
         return -1;
     }
-
+ #if !defined(NO_SERIAL_LINK)
     QSerialPort::setNativeMethods();
+ #endif
+    JoystickAndroid::setNativeMethods();
 
     return JNI_VERSION_1_6;
 }
@@ -203,7 +208,7 @@ int main(int argc, char *argv[])
     CmdLineOpt_t rgCmdLineOptions[] = {
         { "--unittest",             &runUnitTests,          &unitTestOptions },
         { "--unittest-stress",      &stressUnitTests,       &unitTestOptions },
-        { "--no-windows-assert-ui", &quietWindowsAsserts,   NULL },
+        { "--no-windows-assert-ui", &quietWindowsAsserts,   nullptr },
         // Add additional command line option flags here
     };
 
@@ -228,6 +233,7 @@ int main(int argc, char *argv[])
 #endif
 #endif // QT_DEBUG
 
+    QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
     QGCApplication* app = new QGCApplication(argc, argv, runUnitTests);
     Q_CHECK_PTR(app);
 
